@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\ItemPenjualan;
 use App\Models\Penjualan;
 use App\Models\Produk;
+use App\Models\StockMovement;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -55,7 +56,14 @@ class ItemPenjualanController extends Controller
                     throw new \RuntimeException("Stok {$product->nama} tidak mencukupi.");
                 }
 
+                $stokSebelum = $product->stok;
                 $product->decrement('stok', $data['quantity']);
+                StockMovement::create([
+                    'produk_id' => $product->id, 'user_id' => Auth::id(),
+                    'stok_sebelum' => $stokSebelum, 'perubahan' => -$data['quantity'],
+                    'stok_sesudah' => $stokSebelum - $data['quantity'], 'jenis' => 'PENJUALAN',
+                    'catatan' => 'Produk ditambahkan ke keranjang',
+                ]);
                 $item->subtotal = $item->kuantitas * $item->harga_satuan;
                 $item->save();
 
@@ -94,8 +102,16 @@ class ItemPenjualanController extends Controller
                     throw new \RuntimeException("Stok {$product->nama} tidak mencukupi.");
                 }
 
-                if ($difference > 0) $product->decrement('stok', $difference);
-                if ($difference < 0) $product->increment('stok', abs($difference));
+                if ($difference !== 0) {
+                    $stokSebelum = $product->stok;
+                    $difference > 0 ? $product->decrement('stok', $difference) : $product->increment('stok', abs($difference));
+                    StockMovement::create([
+                        'produk_id' => $product->id, 'user_id' => Auth::id(),
+                        'stok_sebelum' => $stokSebelum, 'perubahan' => -$difference,
+                        'stok_sesudah' => $stokSebelum - $difference, 'jenis' => 'PENYESUAIAN',
+                        'catatan' => 'Jumlah item dalam keranjang diubah',
+                    ]);
+                }
 
                 $item->update([
                     'kuantitas' => $data['quantity'],
@@ -124,7 +140,16 @@ class ItemPenjualanController extends Controller
 
         DB::transaction(function () use ($itempenjualan, $sale) {
             $product = Produk::lockForUpdate()->find($itempenjualan->produk_id);
-            if ($product) $product->increment('stok', $itempenjualan->kuantitas);
+            if ($product) {
+                $stokSebelum = $product->stok;
+                $product->increment('stok', $itempenjualan->kuantitas);
+                StockMovement::create([
+                    'produk_id' => $product->id, 'user_id' => Auth::id(),
+                    'stok_sebelum' => $stokSebelum, 'perubahan' => $itempenjualan->kuantitas,
+                    'stok_sesudah' => $stokSebelum + $itempenjualan->kuantitas, 'jenis' => 'PEMBATALAN_ITEM',
+                    'catatan' => 'Item dihapus dari keranjang',
+                ]);
+            }
 
             $itempenjualan->delete();
             $sale->update([

@@ -7,6 +7,8 @@ use App\Http\Requests\User\StoreRequest;
 use App\Http\Requests\User\UpdateRequest;
 use App\Models\Role;
 use App\Models\User;
+use App\Models\Produk;
+use App\Models\Penjualan;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
@@ -113,6 +115,17 @@ class UserController extends Controller
         $adminRole = Role::whereRaw("LOWER(name) = 'admin'")->first();
         if ($adminRole && $user->role_id === $adminRole->id && User::where('role_id', $adminRole->id)->count() <= 1) {
             return back()->with('error', 'Admin terakhir tidak dapat dihapus. Buat admin lain terlebih dahulu.');
+        }
+
+        // Jangan menghapus user yang masih direferensikan oleh histori penjualan
+        // atau data produk. Foreign key database memang akan menolak penghapusan,
+        // tetapi validasi ini memberi pesan yang lebih jelas kepada admin.
+        if (Penjualan::where('user_id', $user->id)->exists()) {
+            return back()->with('error', 'User tidak dapat dihapus karena sudah memiliki histori transaksi penjualan. Nonaktifkan atau gunakan akun lain.');
+        }
+
+        if (Produk::where('user_id', $user->id)->exists()) {
+            return back()->with('error', 'User tidak dapat dihapus karena masih tercatat sebagai pembuat produk. Pindahkan data produk terlebih dahulu.');
         }
 
         $this->deletePhoto($user->photo);

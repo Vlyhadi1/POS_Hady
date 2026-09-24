@@ -14,6 +14,8 @@ class Penjualan extends Model
 
     protected $casts = [
         'total_pembayaran' => 'integer',
+        'diskon' => 'integer',
+        'diskon_persen' => 'integer',
         'uang_dibayar' => 'integer',
         'kembalian' => 'integer',
     ];
@@ -21,6 +23,8 @@ class Penjualan extends Model
     protected $fillable = [
         'user_id',
         'total_pembayaran',
+        'diskon',
+        'diskon_persen',
         'uang_dibayar',
         'kembalian',
         'metode_pembayaran',

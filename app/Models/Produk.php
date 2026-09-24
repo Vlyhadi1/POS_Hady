@@ -61,6 +61,11 @@ class Produk extends Model
         return $this->hasMany(ItemPenjualan::class, 'produk_id');
     }
 
+    public function stockMovements()
+    {
+        return $this->hasMany(StockMovement::class, 'produk_id');
+    }
+
     /*
     |--------------------------------------------------------------------------
     | Accessor Profit

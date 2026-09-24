@@ -16,5 +16,9 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
-        //
+        $exceptions->render(function (\Symfony\Component\HttpKernel\Exception\TooManyRequestsHttpException $exception, $request) {
+            if ($request->expectsHtml()) {
+                return response()->view('errors.429', [], 429);
+            }
+        });
     })->create();

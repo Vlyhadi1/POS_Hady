@@ -60,7 +60,7 @@
                 </div>
 
                 <div class="row g-3 mb-3">
-                    <div class="col-sm-6"><div class="price-box"><span class="info-label">Harga Beli / Modal</span><div class="fs-5 fw-bold text-dark">Rp {{ number_format($produk->harga_beli,0,',','.') }}</div></div></div>
+                    <div class="col-sm-6"><div class="price-box"><span class="info-label">Harga Pokok / Modal</span><div class="fs-5 fw-bold text-dark">Rp {{ number_format($produk->harga_beli,0,',','.') }}</div></div></div>
                     <div class="col-sm-6"><div class="price-box price-sale"><span class="info-label text-success">Harga Jual</span><div class="fs-4 fw-bold text-success">Rp {{ number_format($produk->harga_jual,0,',','.') }}</div></div></div>
                 </div>
 

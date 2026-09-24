@@ -63,8 +63,10 @@ button,input,select,textarea{font:inherit}
     right:-100px;top:-150px;
     border-radius:50%;
     background:rgba(255,255,255,.09);
+    pointer-events:none;
 }
 .pos-hero>*{position:relative;z-index:1}
+.banner-green-gradient > *, .banner-purple-gradient > *{position:relative;z-index:1}
 
 .btn-success,.btn-success-custom{
     background:linear-gradient(135deg,#22c55e,#15803d)!important;

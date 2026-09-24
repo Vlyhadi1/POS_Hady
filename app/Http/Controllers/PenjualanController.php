@@ -5,12 +5,28 @@ namespace App\Http\Controllers;
 use App\Http\Requests\SearchRequest;
 use App\Models\Penjualan;
 use App\Models\Produk;
+use App\Models\StockMovement;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class PenjualanController extends Controller
 {
+    public function pdf(Penjualan $penjualan)
+    {
+        $this->authorize('view', $penjualan);
+        $penjualan->load(['itemPenjualan.produk', 'user']);
+        $setting = \App\Models\Setting::current();
+        $logoPath = $setting->store_logo ? storage_path('app/public/' . $setting->store_logo) : null;
+        $logoDataUri = is_file($logoPath ?? '')
+            ? 'data:image/' . pathinfo($logoPath, PATHINFO_EXTENSION) . ';base64,' . base64_encode(file_get_contents($logoPath))
+            : null;
+
+        return Pdf::loadView('penjualan.pdf', compact('penjualan', 'setting', 'logoDataUri'))
+            ->setPaper('a5', 'portrait')
+            ->download('nota-transaksi-' . $penjualan->id . '.pdf');
+    }
     /**
      * Menampilkan daftar transaksi penjualan.
      */
@@ -146,8 +162,17 @@ class PenjualanController extends Controller
 
         $request->validate([
             'payment_method' => ['required', 'in:CASH,QRIS,TRANSFER'],
-            'amount_paid' => ['nullable', 'integer', 'min:0']
+            'amount_paid' => ['nullable', 'integer', 'min:0'],
+            'diskon' => ['nullable', 'integer', 'min:0'],
+            'diskon_value' => ['nullable', 'integer', 'min:0'],
+            'diskon_type' => ['nullable', 'in:nominal,persen'],
         ]);
+
+        $isAdmin = strtolower(optional(Auth::user()->role)->name ?? '') === 'admin';
+        $discountValue = $request->has('diskon_value') ? $request->integer('diskon_value') : $request->integer('diskon');
+        if (!$isAdmin && $discountValue > 0) {
+            return back()->with('error', 'Diskon hanya dapat digunakan oleh Admin.')->withInput();
+        }
 
         if ($penjualan->status !== 'OPEN') {
             return back()->with('error', 'Transaksi sudah diproses sebelumnya.');
@@ -158,20 +183,33 @@ class PenjualanController extends Controller
         }
 
         try {
-            DB::transaction(function () use ($penjualan, $request) {
+            DB::transaction(function () use ($penjualan, $request, $isAdmin) {
                 $penjualan = Penjualan::lockForUpdate()->findOrFail($penjualan->id);
                 if ($penjualan->status !== 'OPEN') {
                     throw new \RuntimeException('Transaksi sudah diproses sebelumnya.');
                 }
-                $total = (int) $penjualan->itemPenjualan()->sum('subtotal');
-            $method = $request->payment_method;
-            $paid = $method === 'CASH' ? (int) ($request->amount_paid ?? 0) : $total;
+                $subtotal = (int) $penjualan->itemPenjualan()->sum('subtotal');
+                $discountType = $request->input('diskon_type', 'nominal');
+                $discountValue = $isAdmin ? ($request->has('diskon_value') ? (int) $request->diskon_value : (int) $request->diskon) : 0;
+                $diskonPersen = $discountType === 'persen' ? $discountValue : 0;
+                if ($diskonPersen > 100) {
+                    throw new \RuntimeException('Diskon persentase maksimal 100%.');
+                }
+                $diskon = $discountType === 'persen' ? (int) floor($subtotal * $diskonPersen / 100) : $discountValue;
+                if ($diskon > $subtotal) {
+                    throw new \RuntimeException('Diskon tidak boleh lebih besar dari subtotal transaksi.');
+                }
+                $total = $subtotal - $diskon;
+                $method = $request->payment_method;
+                $paid = $method === 'CASH' ? (int) ($request->amount_paid ?? 0) : $total;
 
-            if ($method === 'CASH' && $paid < $total) {
-                throw new \RuntimeException('Uang yang dibayar kurang dari total transaksi.');
-            }
+                if ($method === 'CASH' && $paid < $total) {
+                    throw new \RuntimeException('Uang yang dibayar kurang dari total transaksi.');
+                }
 
                 $penjualan->update([
+                    'diskon' => $diskon,
+                    'diskon_persen' => $diskonPersen,
                     'metode_pembayaran' => $method,
                     'total_pembayaran' => $total,
                     'uang_dibayar' => $paid,
@@ -195,22 +233,40 @@ class PenjualanController extends Controller
     {
         $this->authorize('delete', $penjualan);
 
-        if ($penjualan->status !== 'OPEN') {
-            return back()->with('error', 'Hanya transaksi yang masih terbuka yang dapat dibatalkan.');
-        }
+        $wasCancelled = DB::transaction(function () use ($penjualan) {
+            $penjualan = Penjualan::lockForUpdate()->findOrFail($penjualan->id);
 
-        DB::transaction(function () use ($penjualan) {
+            if ($penjualan->status !== 'OPEN') {
+                return false;
+            }
+
             $items = $penjualan->itemPenjualan()->lockForUpdate()->get();
 
             foreach ($items as $item) {
-                Produk::lockForUpdate()->find($item->produk_id)?->increment('stok', $item->kuantitas);
+                $product = Produk::lockForUpdate()->find($item->produk_id);
+                if ($product) {
+                    $stokSebelum = $product->stok;
+                    $product->increment('stok', $item->kuantitas);
+                    StockMovement::create([
+                        'produk_id' => $product->id, 'user_id' => Auth::id(),
+                        'stok_sebelum' => $stokSebelum, 'perubahan' => $item->kuantitas,
+                        'stok_sesudah' => $stokSebelum + $item->kuantitas, 'jenis' => 'PEMBATALAN',
+                        'catatan' => 'Transaksi dibatalkan',
+                    ]);
+                }
             }
 
             $penjualan->update([
                 'status' => 'CANCELLED',
                 'total_pembayaran' => $penjualan->itemPenjualan()->sum('subtotal'),
             ]);
+
+            return true;
         });
+
+        if (!$wasCancelled) {
+            return back()->with('error', 'Hanya transaksi yang masih terbuka yang dapat dibatalkan.');
+        }
 
         return redirect()
             ->route('penjualan.index')

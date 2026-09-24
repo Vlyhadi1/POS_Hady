@@ -73,7 +73,7 @@
 
     <div class="col-12 col-md-6">
         <div class="product-form-section">
-            <label class="product-form-label">Harga Beli / Modal <span class="required">*</span></label>
+            <label class="product-form-label">Harga Pokok / Modal <span class="required">*</span></label>
             <div class="input-prefix"><span>Rp</span><input type="number" min="0" step="1" inputmode="numeric" id="hargaBeli" name="purchase_price" class="product-input @error('purchase_price') is-invalid @enderror" value="{{ old('purchase_price', $produk->harga_beli ?? '') }}" placeholder="0" required></div>
             @error('purchase_price')<div class="invalid-feedback-custom">{{ $message }}</div>@enderror
         </div>

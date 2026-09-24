@@ -15,11 +15,13 @@
 
 <aside class="pos-sidebar" id="posSidebar">
     <div class="pos-brand">
-        <div class="pos-brand-icon"><img src="{{ asset('images/pos-ind-logistik.jpg') }}" alt="POS IND Logistik Indonesia" class="pos-brand-logo"></div>
-        <div>
-            <div class="pos-brand-title">POS IND</div>
-            <div class="pos-brand-subtitle">Logistik Indonesia</div>
-        </div>
+        <a href="{{ route('toko') }}" class="pos-brand-link" title="Lihat profil toko">
+            <div class="pos-brand-icon"><img src="{{ asset('images/pos-ind-logistik.jpg') }}" alt="POS IND Logistik Indonesia" class="pos-brand-logo"></div>
+            <div>
+                <div class="pos-brand-title">POS IND</div>
+                <div class="pos-brand-subtitle">Logistik Indonesia</div>
+            </div>
+        </a>
         <button class="pos-sidebar-close" id="posSidebarClose" type="button"><i class="bi bi-x-lg"></i></button>
     </div>
 
@@ -95,6 +97,9 @@
 <style>
 .pos-sidebar{position:fixed;inset:0 auto 0 0;width:250px;background:linear-gradient(180deg,#0b1f36,#0a1a2c);color:#dbe7f5;z-index:1100;display:flex;flex-direction:column;box-shadow:10px 0 30px rgba(2,6,23,.12)}
 .pos-brand{height:78px;padding:0 18px;display:flex;align-items:center;gap:11px;border-bottom:1px solid rgba(255,255,255,.08)}
+.pos-brand-link{display:flex;align-items:center;gap:11px;flex:1 1 auto;min-width:0;text-decoration:none;color:inherit;border-radius:10px;transition:background-color .15s ease}
+.pos-brand-link:hover{background-color:rgba(255,255,255,.06)}
+.pos-brand-link:hover .pos-brand-title{color:#4ade80}
 .pos-brand-icon{width:48px;height:48px;border-radius:12px;overflow:hidden;background:#fff;display:grid;place-items:center;box-shadow:0 8px 20px rgba(0,0,0,.18);flex:0 0 auto}.pos-brand-logo{width:100%;height:100%;object-fit:cover;display:block}
 .pos-brand-title{font-weight:800;font-size:17px;color:#fff;line-height:1.1}
 .pos-brand-subtitle{font-size:10px;color:#8da2ba;margin-top:3px}

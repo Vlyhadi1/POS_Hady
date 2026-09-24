@@ -10,13 +10,14 @@ use App\Http\Controllers\ProdukController;
 use App\Http\Controllers\SettingController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\LaporanController;
+use App\Http\Controllers\TokoController;
 
 Route::get('/', fn () => redirect()->route('login'))->name('home');
 Route::get('/health', fn () => response()->json(['status' => 'ok']))->name('health');
 
 Route::middleware('guest')->group(function () {
     Route::get('/login', [AuthController::class, 'index'])->name('login');
-    Route::post('/auth', [AuthController::class, 'auth'])->name('auth');
+    Route::post('/auth', [AuthController::class, 'auth'])->middleware('throttle:5,1')->name('auth');
     Route::get('/lupa-kata-sandi', [AuthController::class, 'forgotPassword'])->name('password.forgot');
     Route::post('/lupa-kata-sandi', [AuthController::class, 'forgotPasswordSubmit'])->name('password.forgot.submit');
     Route::get('/reset-password/{token}', [AuthController::class, 'resetPassword'])->name('password.reset');
@@ -30,8 +31,13 @@ Route::middleware('auth')->group(function () {
 
     // Profil semua user yang sudah login
     Route::get('/profile', [UserController::class, 'profile'])->name('profile');
-    Route::get('/laporan', [LaporanController::class, 'index'])->name('laporan.index');
-    Route::get('/laporan/export', [LaporanController::class, 'export'])->name('laporan.export');
+    Route::get('/toko', [TokoController::class, 'index'])->name('toko');
+    Route::middleware('role:admin,kasir')->group(function () {
+        Route::get('/laporan', [LaporanController::class, 'index'])->name('laporan.index');
+        Route::get('/laporan/export', [LaporanController::class, 'export'])->name('laporan.export');
+        Route::get('/laporan/excel', [LaporanController::class, 'excel'])->name('laporan.excel');
+        Route::get('/laporan/pdf', [LaporanController::class, 'pdf'])->name('laporan.pdf');
+    });
     Route::put('/profile', [UserController::class, 'updateProfile'])->name('profile.update');
 
     // Admin
@@ -53,8 +59,10 @@ Route::middleware('auth')->group(function () {
 
     // Admin & Kasir
     Route::middleware('role:admin,kasir')->group(function () {
+        Route::get('/produk/riwayat-stok', [ProdukController::class, 'stockHistory'])->name('produk.stock-history');
         Route::resource('produk', ProdukController::class);
         Route::resource('penjualan', PenjualanController::class);
+        Route::get('/penjualan/{penjualan}/pdf', [PenjualanController::class, 'pdf'])->name('penjualan.pdf');
         Route::post('/itempenjualan', [ItemPenjualanController::class, 'store'])->name('itempenjualan.store');
         Route::put('/itempenjualan/{itempenjualan}', [ItemPenjualanController::class, 'update'])->name('itempenjualan.update');
         Route::delete('/itempenjualan/{itempenjualan}', [ItemPenjualanController::class, 'destroy'])->name('itempenjualan.destroy');

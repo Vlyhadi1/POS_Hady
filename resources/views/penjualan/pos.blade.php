@@ -113,7 +113,7 @@
 
     {{-- ALERTS --}}
     @if(session('error'))
-        <div class="alert alert-danger rounded-3 shadow-sm mb-4 border-0 border-start border-4 border-danger">
+        <div class="alert alert-danger rounded-3 shadow-sm mb-4 border-start border-4 border-danger">
             <div class="d-flex align-items-center gap-2">
                 <i class="bi bi-exclamation-triangle-fill fs-5"></i>
                 <div>{{ session('error') }}</div>
@@ -122,7 +122,7 @@
     @endif
 
     @if(session('success'))
-        <div class="alert alert-success rounded-3 shadow-sm mb-4 border-0 border-start border-4 border-success">
+        <div class="alert alert-success rounded-3 shadow-sm mb-4 border-start border-4 border-success">
             <div class="d-flex align-items-center gap-2">
                 <i class="bi bi-check-circle-fill fs-5"></i>
                 <div>{{ session('success') }}</div>
@@ -220,7 +220,7 @@
                                                        name="quantity"
                                                        value="1"
                                                        min="1"
-                                                       class="form-control form-control-sm text-center border-1 shadow-none rounded-pill {{ $sale->status === 'COMPLETED' ? 'readonly' : '' }}"
+                                                       class="form-control form-control-sm text-center border shadow-none rounded-pill {{ $sale->status === 'COMPLETED' ? 'readonly' : '' }}"
                                                        style="background-color: #f8fafc;"
                                                        onclick="event.stopPropagation();">
                                             </div>
@@ -296,7 +296,7 @@
                                                    value="{{ $item->kuantitas }}"
                                                    min="1"
                                                    onchange="this.form.submit()"
-                                                   class="form-control form-control-sm text-center border-1 shadow-none rounded-2"
+                                                   class="form-control form-control-sm text-center border shadow-none rounded-2"
                                                    style="background-color: #f8fafc;"
                                                    {{ $sale->status === 'COMPLETED' ? 'disabled' : '' }}>
                                         </form>
@@ -331,10 +331,27 @@
 
                 {{-- FOOTER / TOTAL & CHECKOUT --}}
                 <div class="card-footer bg-white border-0 p-4 border-top">
+                    @php
+                        $subtotalTransaksi = (int) $sale->itemPenjualan->sum('subtotal');
+                        $diskonTransaksi = (int) ($sale->diskon ?? 0);
+                    @endphp
+                    @if(strtolower(optional(auth()->user()->role)->name ?? '') === 'admin')
+                        <div class="mb-3">
+                            <label for="discountInput" class="form-label fw-semibold">Diskon Transaksi</label>
+                            <div class="input-group">
+                                <select id="discountType" name="diskon_type" form="checkoutForm" class="form-select" style="max-width:125px" {{ $sale->status === 'COMPLETED' ? 'disabled' : '' }}>
+                                    <option value="nominal" @selected(($sale->diskon_persen ?? 0) === 0)>Rp</option>
+                                    <option value="persen" @selected(($sale->diskon_persen ?? 0) > 0)>%</option>
+                                </select>
+                                <input type="number" min="0" max="{{ $subtotalTransaksi }}" step="1" id="discountInput" name="diskon_value" form="checkoutForm" value="{{ ($sale->diskon_persen ?? 0) > 0 ? $sale->diskon_persen : $diskonTransaksi }}" class="form-control" placeholder="0" {{ $sale->status === 'COMPLETED' ? 'disabled' : '' }}>
+                            </div>
+                            <div id="discountHint" class="small text-muted mt-1">Maksimal Rp {{ number_format($subtotalTransaksi, 0, ',', '.') }}.</div>
+                        </div>
+                    @endif
                     <div class="total-receipt-box p-3 mb-3 text-center">
                         <span class="text-muted small text-uppercase fw-semibold d-block mb-1">Total Pembayaran</span>
-                        <h2 class="fw-bold mb-0" style="color: #15803d;">
-                            Rp {{ number_format($sale->total_pembayaran, 0, ',', '.') }}
+                        <h2 id="checkoutTotal" class="fw-bold mb-0" style="color: #15803d;">
+                            Rp {{ number_format(max(0, $subtotalTransaksi - $diskonTransaksi), 0, ',', '.') }}
                         </h2>
                     </div>
 
@@ -344,7 +361,7 @@
                         @method('PUT')
 
                         <div class="mb-3">
-                            <select id="paymentMethodSelect" name="payment_method" class="form-select border-1 rounded-pill px-3 shadow-none bg-light" required {{ $sale->status === 'COMPLETED' ? 'disabled' : '' }}>
+                            <select id="paymentMethodSelect" name="payment_method" class="form-select border rounded-pill px-3 shadow-none bg-light" required {{ $sale->status === 'COMPLETED' ? 'disabled' : '' }}>
                                 <option value="">-- Pilih Metode Pembayaran --</option>
                                 <option value="CASH">Cash / Tunai</option>
                                 <option value="QRIS">QRIS (Scan Barcode)</option>
@@ -408,7 +425,7 @@
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body p-4 text-center">
-                <p class="text-muted small mb-3">Scan QR Code menggunakan aplikasi E-Wallet / Mobile Banking Anda.</p>
+                <p class="text-muted small mb-3">QR ini hanya simulasi untuk demonstrasi aplikasi. Tidak memproses pembayaran QRIS sungguhan.</p>
                 
                 {{-- Box Barcode QRIS --}}
                 <div class="qris-card p-4 d-inline-block shadow-sm mb-3">
@@ -416,7 +433,7 @@
                          alt="QRIS Barcode" 
                          class="img-fluid rounded-3 mb-2">
                     <div class="d-flex align-items-center justify-content-center gap-2 text-muted small fw-bold">
-                        <i class="bi bi-shield-check text-success"></i> QRIS NATIONAL STANDARD
+                        <i class="bi bi-shield-check text-success"></i> QR PEMBAYARAN • SIMULASI
                     </div>
                 </div>
 
@@ -463,7 +480,7 @@
 
     function handleCheckout() {
         const paymentMethod = document.getElementById('paymentMethodSelect').value;
-        const totalAmount = {{ $sale->total_pembayaran }};
+        const totalAmount = getCheckoutTotal();
         const amountPaid = parseInt(document.getElementById('amountPaid')?.value || '0', 10);
 
         if (!paymentMethod) {
@@ -522,9 +539,37 @@
     });
 
     document.getElementById('amountPaid')?.addEventListener('input', updateChange);
+    document.getElementById('discountInput')?.addEventListener('input', updateCheckoutTotal);
+    document.getElementById('discountType')?.addEventListener('change', function () {
+        const input = document.getElementById('discountInput');
+        const hint = document.getElementById('discountHint');
+        if (this.value === 'persen') {
+            input.max = '100';
+            hint.textContent = 'Maksimal 100%.';
+        } else {
+            input.max = '{{ $subtotalTransaksi }}';
+            hint.textContent = 'Maksimal Rp {{ number_format($subtotalTransaksi, 0, ',', '.') }}.';
+        }
+        updateCheckoutTotal();
+    });
+
+    function getCheckoutTotal() {
+        const subtotal = {{ $subtotalTransaksi }};
+        const discount = parseInt(document.getElementById('discountInput')?.value || '0', 10);
+        const type = document.getElementById('discountType')?.value || 'nominal';
+        const amount = type === 'persen' ? Math.floor(subtotal * Math.min(100, Math.max(0, discount)) / 100) : discount;
+        return Math.max(0, subtotal - amount);
+    }
+
+    function updateCheckoutTotal() {
+        const total = getCheckoutTotal();
+        const totalElement = document.getElementById('checkoutTotal');
+        if (totalElement) totalElement.textContent = 'Rp ' + new Intl.NumberFormat('id-ID').format(total);
+        updateChange();
+    }
 
     function updateChange() {
-        const total = {{ $sale->total_pembayaran }};
+        const total = getCheckoutTotal();
         const paid = parseInt(document.getElementById('amountPaid')?.value || '0', 10);
         const change = Math.max(0, paid - total);
         document.getElementById('changeAmount').textContent = 'Rp ' + new Intl.NumberFormat('id-ID').format(change);

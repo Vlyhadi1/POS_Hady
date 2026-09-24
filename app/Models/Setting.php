@@ -10,6 +10,10 @@ class Setting extends Model
         'store_name',
         'store_address',
         'store_phone',
+        'store_email',
+        'store_hours',
+        'store_social',
+        'store_description',
         'store_logo',
         'currency',
         'low_stock_limit',
@@ -24,6 +28,7 @@ class Setting extends Model
     {
         return static::firstOrCreate([], [
             'store_name' => 'POS HADI',
+            'store_description' => 'Toko kami hadir untuk memenuhi kebutuhan harian Anda dengan produk yang berkualitas dan pelayanan yang ramah.',
             'currency' => 'IDR',
             'low_stock_limit' => 5,
             'receipt_footer' => 'Terima kasih telah berbelanja.',

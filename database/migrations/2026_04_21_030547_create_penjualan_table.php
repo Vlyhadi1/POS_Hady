@@ -16,7 +16,11 @@ return new class extends Migration
             $table->foreignId('user_id')->constrained('users', 'id')->restrictOnDelete();
             $table->integer('total_pembayaran');
             $table->string('metode_pembayaran');
-            $table->enum('status', ['OPEN', 'COMPLETED']);
+            if (Schema::getConnection()->getDriverName() === 'mysql') {
+                $table->enum('status', ['OPEN', 'COMPLETED']);
+            } else {
+                $table->string('status');
+            }
             $table->timestamps();
         });
     }

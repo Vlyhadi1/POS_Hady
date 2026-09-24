@@ -6,12 +6,23 @@ use App\Http\Requests\Produk\StoreRequest;
 use App\Http\Requests\Produk\UpdateRequest;
 use App\Models\Category;
 use App\Models\Produk;
+use App\Models\StockMovement;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 
 class ProdukController extends Controller
 {
+    public function stockHistory(Request $request)
+    {
+        $movements = StockMovement::with(['produk', 'user'])
+            ->latest()
+            ->paginate(20)
+            ->withQueryString();
+
+        return view('produk.stock-history', compact('movements'));
+    }
+
     public function index(Request $request)
     {
         $this->authorize('viewAny', Produk::class);
@@ -103,6 +114,14 @@ class ProdukController extends Controller
         $this->authorize('update', $produk);
 
         $data = $this->productData($request);
+
+        if ($data['stok'] !== $produk->stok && $produk->itemPenjualan()
+            ->whereHas('penjualan', fn ($query) => $query->where('status', 'OPEN'))
+            ->exists()) {
+            return back()
+                ->withInput()
+                ->with('error', 'Stok tidak dapat diubah karena produk masih ada di keranjang transaksi yang terbuka. Selesaikan atau batalkan transaksi tersebut terlebih dahulu.');
+        }
 
         // Jangan mengubah user_id saat admin mengedit produk.
         if ($request->hasFile('foto')) {

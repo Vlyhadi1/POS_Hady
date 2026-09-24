@@ -71,3 +71,35 @@ The root URL `/` redirects to `/login`.
 ## File uploads
 
 The current `public` filesystem is local to the container. Vercel containers do not provide persistent local storage. For permanent product/store images, use object/blob storage and update the filesystem disk accordingly.
+
+## Local backup and restore
+
+Create a MySQL backup with:
+
+```bash
+php artisan db:backup
+```
+
+Backups are written to `storage/app/backups`. Restore a backup only after confirming the target database:
+
+```bash
+php artisan db:restore storage/app/backups/backup-YYYY-MM-DD_HHmmss.sql --force
+```
+
+The commands require `mysqldump` and `mysql` to be available in `PATH`.
+
+## Persistent image storage
+
+For production uploads, configure an S3-compatible provider in Vercel:
+
+```text
+FILESYSTEM_DISK=s3
+AWS_ACCESS_KEY_ID=...
+AWS_SECRET_ACCESS_KEY=...
+AWS_DEFAULT_REGION=...
+AWS_BUCKET=...
+AWS_ENDPOINT=...
+AWS_URL=...
+```
+
+Use provider secrets in Vercel Environment Variables. Do not commit them to `.env` or source control.

@@ -124,7 +124,7 @@
                         <th class="ps-4" style="width:60px">No</th>
                         <th>Produk</th>
                         <th>Kategori</th>
-                        <th>Harga Beli</th>
+                        <th>Harga Pokok</th>
                         <th>Harga Jual</th>
                         <th>Stok</th>
                         <th>Status</th>

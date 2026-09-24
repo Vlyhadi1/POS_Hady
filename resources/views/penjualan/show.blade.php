@@ -90,6 +90,9 @@
                 <button onclick="window.print()" class="btn btn-light rounded-pill px-3 fw-semibold text-green shadow-sm d-flex align-items-center gap-1">
                     <i class="bi bi-printer-fill"></i> Cetak Struk
                 </button>
+                <a href="{{ route('penjualan.pdf', $penjualan) }}" class="btn btn-danger rounded-pill px-3 fw-semibold shadow-sm d-flex align-items-center gap-1">
+                    <i class="bi bi-file-earmark-pdf"></i> PDF
+                </a>
                 <a href="{{ route('penjualan.index') }}" class="btn btn-outline-light rounded-pill px-4 fw-semibold shadow-sm d-flex align-items-center gap-1">
                     <i class="bi bi-arrow-left"></i> Kembali
                 </a>
@@ -212,8 +215,16 @@
                             </tbody>
                             <tfoot class="table-group-divider">
                                 <tr>
-                                    <td colspan="3" class="text-end fw-bold fs-5 pt-3">Total Pembayaran:</td>
-                                    <td class="text-end fw-bold fs-5 text-green pt-3">
+                                    <td colspan="3" class="text-end pt-3">Subtotal:</td>
+                                    <td class="text-end pt-3">Rp {{ number_format($penjualan->itemPenjualan->sum('subtotal'), 0, ',', '.') }}</td>
+                                </tr>
+                                <tr>
+                                    <td colspan="3" class="text-end text-danger">Diskon:</td>
+                                    <td class="text-end text-danger">- Rp {{ number_format($penjualan->diskon ?? 0, 0, ',', '.') }}</td>
+                                </tr>
+                                <tr>
+                                    <td colspan="3" class="text-end fw-bold fs-5">Total Pembayaran:</td>
+                                    <td class="text-end fw-bold fs-5 text-green">
                                         Rp {{ number_format($penjualan->total_pembayaran, 0, ',', '.') }}
                                     </td>
                                 </tr>

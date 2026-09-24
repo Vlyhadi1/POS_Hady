@@ -49,6 +49,23 @@
                                     <input id="storePhone" name="store_phone" value="{{ old('store_phone',$settings->store_phone) }}" class="form-control" maxlength="30" placeholder="08xxxxxxxxxx" inputmode="tel" autocomplete="tel">
                                     <div class="form-text">Opsional, dapat ditampilkan pada struk.</div>
                                 </div>
+                                <div class="col-md-6">
+                                    <label for="storeEmail" class="form-label">Email Toko</label>
+                                    <input id="storeEmail" type="email" name="store_email" value="{{ old('store_email',$settings->store_email) }}" class="form-control" maxlength="150" placeholder="tokohadi@email.com" autocomplete="email">
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="storeHours" class="form-label">Jam Operasional</label>
+                                    <input id="storeHours" name="store_hours" value="{{ old('store_hours',$settings->store_hours) }}" class="form-control" maxlength="150" placeholder="Senin-Sabtu, 08.00-21.00">
+                                </div>
+                                <div class="col-12">
+                                    <label for="storeSocial" class="form-label">Media Sosial / Website</label>
+                                    <input id="storeSocial" type="url" name="store_social" value="{{ old('store_social',$settings->store_social) }}" class="form-control" maxlength="255" placeholder="https://instagram.com/tokohadi">
+                                </div>
+                                <div class="col-12">
+                                    <label for="storeDescription" class="form-label">Tentang Toko</label>
+                                    <textarea id="storeDescription" name="store_description" class="form-control" rows="4" maxlength="500" placeholder="Tuliskan deskripsi singkat tentang toko Anda.">{{ old('store_description',$settings->store_description) }}</textarea>
+                                    <div class="form-text">Deskripsi singkat ini akan tampil di halaman profil toko.</div>
+                                </div>
                             </div>
                         </div>
                     </section>

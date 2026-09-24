@@ -133,6 +133,7 @@
                 <div class="p-3 d-flex flex-column gap-2">
                     <a class="quick" href="{{ route('penjualan.create') }}"><i class="bi bi-plus-circle-fill text-primary"></i> Buat Transaksi Baru</a>
                     <a class="quick" href="{{ route('produk.create') }}"><i class="bi bi-box-seam-fill text-warning"></i> Tambah Produk / Stok</a>
+                    <a class="quick" href="{{ route('produk.stock-history') }}"><i class="bi bi-clock-history text-info"></i> Riwayat Perubahan Stok</a>
                     @if(auth()->user()->role && strtolower(auth()->user()->role->name) === 'admin')
                         <a class="quick" href="{{ route('admin.categories.create') }}"><i class="bi bi-tags-fill text-success"></i> Tambah Kategori</a>
                     @endif
@@ -149,7 +150,10 @@
     <div class="row g-3 mb-3">
         <div class="col-lg-6">
             <div class="panel">
-                <div class="panel-head"><h5 class="panel-title text-warning"><i class="bi bi-exclamation-triangle-fill me-2"></i>Stok Menipis</h5></div>
+                <div class="panel-head">
+                    <h5 class="panel-title text-warning"><i class="bi bi-exclamation-triangle-fill me-2"></i>Stok Menipis</h5>
+                    <a href="{{ route('produk.index', ['stok_status' => 'kritis']) }}" class="small text-warning text-decoration-none">Lihat Semua</a>
+                </div>
                 <div class="table-responsive">
                     <table class="table mb-0">
                         <thead><tr><th>Produk</th><th>Stok</th><th>Minimum</th></tr></thead>
@@ -166,7 +170,10 @@
         </div>
         <div class="col-lg-6">
             <div class="panel">
-                <div class="panel-head"><h5 class="panel-title text-danger"><i class="bi bi-x-circle-fill me-2"></i>Stok Habis</h5></div>
+                <div class="panel-head">
+                    <h5 class="panel-title text-danger"><i class="bi bi-x-circle-fill me-2"></i>Stok Habis</h5>
+                    <a href="{{ route('produk.index', ['stok_status' => 'habis']) }}" class="small text-danger text-decoration-none">Lihat Semua</a>
+                </div>
                 <div class="table-responsive">
                     <table class="table mb-0">
                         <thead><tr><th>Produk</th><th>Status</th></tr></thead>

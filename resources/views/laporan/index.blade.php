@@ -132,6 +132,17 @@
 
             <div class="col-12 col-sm-6 col-xl-3">
                 <div class="report-stat">
+                    <div class="report-stat-icon red"><i class="bi bi-tag-fill"></i></div>
+                    <div class="min-w-0">
+                        <div class="report-stat-label">Total Diskon</div>
+                        <div class="report-stat-value currency">Rp {{ number_format($ringkasan['diskon'], 0, ',', '.') }}</div>
+                        <div class="report-stat-note">Potongan periode</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-12 col-sm-6 col-xl-3">
+                <div class="report-stat">
                     <div class="report-stat-icon purple"><i class="bi bi-credit-card-2-front-fill"></i></div>
                     <div class="min-w-0">
                         <div class="report-stat-label">Pembayaran Non-Tunai</div>
@@ -142,6 +153,14 @@
             </div>
         </div>
 
+        <div class="card report-card mb-4">
+            <div class="card-header bg-white p-3 p-md-4">
+                <h5 class="fw-bold mb-1">Grafik Penjualan Harian</h5>
+                <p class="text-muted small mb-0">Pergerakan penjualan pada periode yang dipilih.</p>
+            </div>
+            <div class="p-3" style="height:260px"><canvas id="dailySalesChart"></canvas></div>
+        </div>
+
         <div class="row g-4">
             <div class="col-12 col-xl-8">
                 <div class="card report-card h-100">
@@ -150,8 +169,11 @@
                             <h5 class="fw-bold mb-1">Daftar Transaksi</h5>
                             <p class="text-muted small mb-0">Transaksi berstatus selesai pada periode terpilih.</p>
                         </div>
-                        <a href="{{ route('laporan.export', request()->query()) }}" class="btn btn-outline-success btn-sm">
-                            <i class="bi bi-file-earmark-spreadsheet me-1"></i>Export CSV
+                        <a href="{{ route('laporan.pdf', request()->query()) }}" class="btn btn-danger btn-sm">
+                            <i class="bi bi-file-earmark-pdf me-1"></i>Download PDF
+                        </a>
+                        <a href="{{ route('laporan.excel', request()->query()) }}" class="btn btn-success btn-sm">
+                            <i class="bi bi-file-earmark-excel me-1"></i>Export Excel
                         </a>
                     </div>
 
@@ -163,6 +185,7 @@
                                     <th>Tanggal</th>
                                     <th>Kasir</th>
                                     <th>Metode</th>
+                                    <th class="text-end">Diskon</th>
                                     <th class="text-end">Total</th>
                                 </tr>
                             </thead>
@@ -200,13 +223,16 @@
                                             @endphp
                                             <span class="payment-badge {{ $methodClass }}">{{ $methodLabel }}</span>
                                         </td>
+                                        <td class="text-end text-danger">
+                                            - Rp {{ number_format($sale->diskon ?? 0, 0, ',', '.') }}
+                                        </td>
                                         <td class="text-end">
                                             <span class="fw-bold">Rp {{ number_format($sale->total_pembayaran, 0, ',', '.') }}</span>
                                         </td>
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="5">
+                                        <td colspan="6">
                                             <div class="empty-report">
                                                 <i class="bi bi-receipt"></i>
                                                 <strong>Belum ada transaksi</strong>
@@ -260,6 +286,28 @@
 
     </div>
 </main>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    new Chart(document.getElementById('dailySalesChart'), {
+        type: 'bar',
+        data: {
+            labels: @json($dailyLabels),
+            datasets: [{
+                label: 'Penjualan',
+                data: @json($dailyValues),
+                backgroundColor: '#22c55e',
+                borderRadius: 6
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: { y: { beginAtZero: true, ticks: { callback: value => 'Rp ' + Number(value).toLocaleString('id-ID') } } }
+        }
+    });
+</script>
 
 <style>
 .report-hero{
@@ -317,6 +365,7 @@
 .report-stat-icon.green{background:#dcfce7;color:#15803d}
 .report-stat-icon.blue{background:#dbeafe;color:#2563eb}
 .report-stat-icon.orange{background:#ffedd5;color:#c2410c}
+.report-stat-icon.red{background:#fee2e2;color:#dc2626}
 .report-stat-icon.purple{background:#f3e8ff;color:#7e22ce}
 .report-stat-label{font-size:10px;text-transform:uppercase;letter-spacing:.04em;color:#64748b;font-weight:700}
 .report-stat-value{font-size:20px;font-weight:800;color:#0f172a;margin-top:2px;white-space:nowrap}
